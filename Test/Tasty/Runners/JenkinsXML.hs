@@ -60,18 +60,18 @@ ingredientTransformer options transform ingredients =
             TestReporter opts _ -> opts
             TestManager opts _ -> opts
 
-    tryIngredient'
-        :: (OptionSet -> TestTree -> StatusMap -> ReportFn -> ReportFn)
-        -> Ingredient -> OptionSet -> TestTree -> Maybe (IO Bool)
-    tryIngredient' f (TestReporter _ report) opts testTree = do -- Maybe monad
-        reportFn <- report opts testTree
-        return $ launchTestTree opts testTree $ \smap ->
-            f opts testTree smap $ reportFn smap
-    tryIngredient' _ (TestManager _ manage) opts testTree =
-        manage opts testTree
+tryIngredient'
+    :: (OptionSet -> TestTree -> StatusMap -> ReportFn -> ReportFn)
+    -> Ingredient -> OptionSet -> TestTree -> Maybe (IO Bool)
+tryIngredient' f (TestReporter _ report) opts testTree = do -- Maybe monad
+    reportFn <- report opts testTree
+    return $ launchTestTree opts testTree $ \smap ->
+        f opts testTree smap $ reportFn smap
+tryIngredient' _ (TestManager _ manage) opts testTree =
+    manage opts testTree
 
-    tryIngredients'
-        :: (OptionSet -> TestTree -> StatusMap -> ReportFn -> ReportFn)
-        -> [Ingredient] -> OptionSet -> TestTree -> Maybe (IO Bool)
-    tryIngredients' f ins opts tree =
-        msum $ map (\i -> tryIngredient' f i opts tree) ins
+tryIngredients'
+    :: (OptionSet -> TestTree -> StatusMap -> ReportFn -> ReportFn)
+    -> [Ingredient] -> OptionSet -> TestTree -> Maybe (IO Bool)
+tryIngredients' f ins opts tree =
+    msum $ map (\i -> tryIngredient' f i opts tree) ins
