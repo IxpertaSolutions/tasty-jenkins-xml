@@ -22,8 +22,26 @@ ghc-options:
     - -Wall
     - -O2
 
+dependencies:
+    - base >=4 && <5
+    - tasty >= 0.10 && < 0.12
+
 library:
+    exposed-modules:
+        - Test.Tasty.Runners.JenkinsXML
     dependencies:
-        - base >=4 && <5
-        - tasty >= 0.10 && < 0.12
         - tasty-ant-xml == 1.0.*
+
+tests:
+    spec:
+        main: Spec.hs
+        source-dirs: test
+        dependencies:
+            - bytestring >=0.9
+            - directory >=1.2
+            - hspec >=2.2
+            - io-capture >=1.0
+            - mockery >=0.3
+            - tasty-hunit >=0.9
+            - tasty-jenkins-xml
+            - unix >=2
