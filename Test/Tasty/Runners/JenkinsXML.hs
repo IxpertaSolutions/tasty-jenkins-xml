@@ -37,8 +37,7 @@ antXMLTransformer =
             Nothing -> return retVal
             Just reportFn -> do
                 k <- reportFn smap
-                retVal' <- k totalTime
-                return retVal'
+                k totalTime
 
 reportTransform
     :: (OptionSet -> TestTree -> StatusMap -> Time -> Bool -> IO Bool)

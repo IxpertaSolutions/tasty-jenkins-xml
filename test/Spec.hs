@@ -31,6 +31,10 @@ import Test.Tasty
 import Test.Tasty.HUnit (assert, testCase)
 import Test.Tasty.Runners.JenkinsXML (antXMLTransformer)
 
+
+{-# ANN module ("HLint: ignore Reduce duplication" :: String) #-}
+{-# ANN module ("HLint: ignore Redundant do" :: String) #-}
+
 main :: IO ()
 main = hspec $ do
     describe "antXMLTransformer" $
