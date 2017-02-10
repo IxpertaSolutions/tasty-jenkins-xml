@@ -10,9 +10,9 @@ description:
 github: IxpertaSolutions/tasty-jenkins-xml
 
 license: BSD3
-author: TODO
-maintainer: TODO
-copyright: TODO
+author: Ixcom Core Team
+maintainer: ixcom-core@ixperta.com
+copyright: (c) 2017 Ixperta Solutions s.r.o.
 
 extra-source-files:
     - CHANGELOG.md
