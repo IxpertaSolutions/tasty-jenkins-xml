@@ -22,10 +22,10 @@ import Test.Tasty.Runners.AntXML
     )
 
 
-type ReportFn = IO (Time -> IO Bool)
+type ReportFn = StatusMap -> IO (Time -> IO Bool)
 
 antXmlOptions :: [OptionDescription]
-antXmlReport :: OptionSet -> TestTree -> Maybe (StatusMap -> ReportFn)
+antXmlReport :: OptionSet -> TestTree -> Maybe ReportFn
 TestReporter antXmlOptions antXmlReport = antXMLRunner
 
 antXMLTransformer :: [Ingredient] -> Ingredient
@@ -41,14 +41,14 @@ antXMLTransformer =
 
 reportTransform
     :: (OptionSet -> TestTree -> StatusMap -> Time -> Bool -> IO Bool)
-    -> OptionSet -> TestTree -> StatusMap -> ReportFn -> ReportFn
-reportTransform f opts testTree smap reportFn =
-  reportFn >>= \k -> return $ \totalTime ->
-    k totalTime >>= f opts testTree smap totalTime
+    -> OptionSet -> TestTree -> ReportFn -> ReportFn
+reportTransform f opts testTree reportFn smap =
+    reportFn smap >>= \k -> return $ \totalTime ->
+        k totalTime >>= f opts testTree smap totalTime
 
 ingredientTransformer
     :: [OptionDescription]
-    -> (OptionSet -> TestTree -> StatusMap -> ReportFn -> ReportFn)
+    -> (OptionSet -> TestTree -> ReportFn -> ReportFn)
     -> [Ingredient] -> Ingredient
 ingredientTransformer options transform ingredients =
     TestManager (options ++ existingOptions) $
@@ -60,17 +60,16 @@ ingredientTransformer options transform ingredients =
             TestManager opts _ -> opts
 
 tryIngredient'
-    :: (OptionSet -> TestTree -> StatusMap -> ReportFn -> ReportFn)
+    :: (OptionSet -> TestTree -> ReportFn -> ReportFn)
     -> Ingredient -> OptionSet -> TestTree -> Maybe (IO Bool)
 tryIngredient' f (TestReporter _ report) opts testTree = do -- Maybe monad
     reportFn <- report opts testTree
-    return $ launchTestTree opts testTree $ \smap ->
-        f opts testTree smap $ reportFn smap
+    return $ launchTestTree opts testTree $ f opts testTree reportFn
 tryIngredient' _ (TestManager _ manage) opts testTree =
     manage opts testTree
 
 tryIngredients'
-    :: (OptionSet -> TestTree -> StatusMap -> ReportFn -> ReportFn)
+    :: (OptionSet -> TestTree -> ReportFn -> ReportFn)
     -> [Ingredient] -> OptionSet -> TestTree -> Maybe (IO Bool)
 tryIngredients' f ins opts tree =
     msum $ map (\i -> tryIngredient' f i opts tree) ins
