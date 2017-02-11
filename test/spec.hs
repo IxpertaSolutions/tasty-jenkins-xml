@@ -39,7 +39,7 @@ import Test.Tasty
     , testGroup
     )
 import Test.Tasty.HUnit (assert, testCase)
-import Test.Tasty.Runners.JenkinsXML (antXMLTransformer)
+import Test.Tasty.Runners.JenkinsXML (jenkinsXMLTransformer)
 
 
 {-# ANN module ("HLint: ignore Reduce duplication" :: String) #-}
@@ -91,7 +91,7 @@ main = hspec $ do
 tastyMain :: IO ()
 tastyMain = defaultMainWithIngredients ingredients tastyTests
   where
-    ingredients = [antXMLTransformer defaultIngredients]
+    ingredients = [jenkinsXMLTransformer defaultIngredients]
 
 tastyTests :: TestTree
 tastyTests = testGroup "group1"

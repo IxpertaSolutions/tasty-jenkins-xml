@@ -1,21 +1,21 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
--- | TODO
 module Test.Tasty.Runners.JenkinsXML
-    ( antXMLTransformer
+    ( jenkinsXMLTransformer
     )
   where
 
 import Control.Applicative (pure)
-import Control.Monad ((>>=), msum)
+import Control.Monad ((>>=), msum, join)
 import Data.Bool (Bool(True, False), (||))
 import Data.Foldable (concatMap)
 import Data.Function ((.), ($), flip)
 import Data.Functor (fmap)
-import Data.Maybe (Maybe(Nothing, Just))
+import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy (Proxy(Proxy))
+import Data.Traversable (mapM)
 import Data.Typeable (Typeable)
 import System.IO (IO, FilePath)
 
@@ -64,9 +64,19 @@ antXmlOptions :: [OptionDescription]
 antXmlReport :: OptionSet -> TestTree -> Maybe ReportFn
 TestReporter antXmlOptions antXmlReport = antXMLRunner
 
-antXMLTransformer :: [Ingredient] -> Ingredient
-antXMLTransformer =
-    ingredientTransformer (exitOption : compatOption : antXmlOptions) $
+-- | This 'Ingredient' transformer adds the possibility to produce a JUnit XML
+-- file __in addition to__ the output producer by another 'Ingredient'.
+-- Internally it invokes 'Test.Tasty.Runners.AntXML.antXMLRunner'.
+--
+-- To be practically useful, it implements two additions:
+--
+--  * @--jxml@ alias for @--xml@ for @test-framework@ compatibility,
+--
+--  * @--exit-success@ to distinguish between /failed/ and /unstable/ builds
+--    in Jenkins CI.
+jenkinsXMLTransformer :: [Ingredient] -> Ingredient
+jenkinsXMLTransformer =
+    testReporterTransformer (exitOption : compatOption : antXmlOptions) $
         reportTransform antXmlTransform . applyCompatOpt
   where
     exitOption = Option (Proxy :: Proxy ExitSuccess)
@@ -81,12 +91,13 @@ antXMLTransformer =
       where
         exit retVal = retVal || isExitSuccess (lookupOption opts)
 
-        antXml retVal = case antXmlReport opts testTree of
-            Nothing -> pure retVal
-            Just reportFn -> do
-                k <- reportFn smap
-                k totalTime
+        antXml retVal = fromMaybe retVal `fmap` tryReport antXmlReport
 
+        tryReport r =
+            (join . fmap ($ totalTime) . ($ smap)) `mapM` r opts testTree
+
+-- Combinator for transforming the final report/record callback of a
+-- 'TestReporter'.
 reportTransform
     :: (OptionSet -> TestTree -> StatusMap -> Time -> Bool -> IO Bool)
     -> OptionSet -> TestTree -> ReportFn -> ReportFn
@@ -94,11 +105,18 @@ reportTransform f opts testTree reportFn smap =
     reportFn smap >>= \k -> pure $ \totalTime ->
         k totalTime >>= f opts testTree smap totalTime
 
-ingredientTransformer
+-- Combinator for building ingredient transformers that change the behaviour
+-- of an existing 'TestReporter' ingredient.
+testReporterTransformer
     :: [OptionDescription]
+    -- ^ Additional command-line options
     -> (OptionSet -> TestTree -> ReportFn -> ReportFn)
-    -> [Ingredient] -> Ingredient
-ingredientTransformer options transform ingredients =
+    -- ^ Function to transform the 'ReportFn' of a 'TestReporter', see
+    -- 'tryIngredient'' and 'launchTestTree' for details.
+    -> [Ingredient]
+    -- ^ Ingredients to transform and run.
+    -> Ingredient
+testReporterTransformer options transform ingredients =
     TestManager (options <> existingOptions) $
         tryIngredients' transform ingredients
   where
@@ -107,6 +125,9 @@ ingredientTransformer options transform ingredients =
             TestReporter opts _ -> opts
             TestManager opts _ -> opts
 
+-- | Modified version of 'Test.Tasty.Ingredients.tryIngredient' that
+-- transforms the 'ReportFn' by a given function, if the 'Ingredient' happens
+-- to be a 'TestReporter'. 'TestManager' is left unmodified.
 tryIngredient'
     :: (OptionSet -> TestTree -> ReportFn -> ReportFn)
     -> Ingredient -> OptionSet -> TestTree -> Maybe (IO Bool)
@@ -116,6 +137,9 @@ tryIngredient' f (TestReporter _ report) opts testTree = do -- Maybe monad
 tryIngredient' _ (TestManager _ manage) opts testTree =
     manage opts testTree
 
+-- | Modified version of 'Test.Tasty.Ingredients.tryIngredients' that
+-- transforms the 'ReportFn' by a given function, if the 'Ingredient' happens
+-- to be a 'TestReporter'. 'TestManager' is left unmodified.
 tryIngredients'
     :: (OptionSet -> TestTree -> ReportFn -> ReportFn)
     -> [Ingredient] -> OptionSet -> TestTree -> Maybe (IO Bool)
