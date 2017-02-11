@@ -3,6 +3,7 @@
 
 module Main (main) where
 
+import Control.Monad (forM_)
 import System.Directory (doesFileExist)
 import System.Environment (withArgs)
 import System.Exit (ExitCode(ExitSuccess, ExitFailure))
@@ -37,30 +38,32 @@ import Test.Tasty.Runners.JenkinsXML (antXMLTransformer)
 
 main :: IO ()
 main = hspec $ do
-    describe "antXMLTransformer" $
-        around_ inTempDirectory $ do
-            it "doesn't break --help" $ do
+    describe "antXMLTransformer" $ around_ inTempDirectory $ do
+        it "lists options in --help" $ do
+            (out, err, exc, status) <- capture $
+                withArgs ["--help"] $
+                    tastyMain `shouldThrow` exitSuccess
+            status `shouldBe` Just (Exited ExitSuccess)
+            (err, exc) `shouldBe` ("", "")
+            unpack out `shouldContain` "Usage:"
+            unpack out `shouldContain` "--xml"
+            unpack out `shouldContain` "--jxml"
+        it "reports failure when some test fails" $ do
+            (out, err, exc, status) <- capture $
+                withArgs [] $
+                    tastyMain `shouldThrow` exitFailure (Just 1)
+            status `shouldBe` Just (Exited ExitSuccess)
+            (err, exc) `shouldBe` ("", "")
+            unpack out `shouldContain` "\n1 out of 2 tests failed"
+            doesFileExist "tasty.xml" `shouldReturn` False
+        forM_ ["--xml", "--jxml"] $ \flag ->
+            it ("writes xml in addition to console output (" ++ flag ++ ")") $ do
                 (out, err, exc, status) <- capture $
-                    withArgs ["--help"] $
-                        tastyMain `shouldThrow` exitSuccess
-                status `shouldBe` Just (Exited ExitSuccess)
-                unpack out `shouldContain` "Usage:"
-                (err, exc) `shouldBe` ("", "")
-            it "returns failure when some test fails" $ do
-                (out, err, exc, status) <- capture $
-                    withArgs [] $
+                    withArgs [flag, "tasty.xml"] $
                         tastyMain `shouldThrow` exitFailure (Just 1)
                 status `shouldBe` Just (Exited ExitSuccess)
-                unpack out `shouldContain` "\n1 out of 2 tests failed"
                 (err, exc) `shouldBe` ("", "")
-                doesFileExist "tasty.xml" `shouldReturn` False
-            it "writes xml in addition to console output" $ do
-                (out, err, exc, status) <- capture $
-                    withArgs ["--xml", "tasty.xml"] $
-                        tastyMain `shouldThrow` exitFailure (Just 1)
-                status `shouldBe` Just (Exited ExitSuccess)
                 unpack out `shouldContain` "\n1 out of 2 tests failed"
-                (err, exc) `shouldBe` ("", "")
                 xml <- readFile "tasty.xml"
                 xml `shouldContain` "<?xml"
                 xml `shouldContain` "errors=\"0\""

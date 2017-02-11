@@ -1,14 +1,22 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 -- | TODO
 module Test.Tasty.Runners.JenkinsXML
     ( antXMLTransformer
     )
   where
 
+import Data.Typeable (Typeable)
+import Data.Proxy (Proxy(Proxy))
+import Control.Applicative (pure)
 import Control.Monad (msum)
 
 import Test.Tasty.Options
-    ( OptionSet
-    , OptionDescription
+    ( IsOption(defaultValue, parseValue, optionName, optionHelp)
+    , OptionSet
+    , OptionDescription(Option)
+    , lookupOption
+    , setOption
     )
 import Test.Tasty.Runners
     ( Ingredient(TestReporter, TestManager)
@@ -19,8 +27,17 @@ import Test.Tasty.Runners
     )
 import Test.Tasty.Runners.AntXML
     ( antXMLRunner
+    , AntXMLPath(AntXMLPath)
     )
 
+
+newtype CompatAntXMLPath = CompatAntXMLPath FilePath deriving Typeable
+
+instance IsOption (Maybe CompatAntXMLPath) where
+    defaultValue = Nothing
+    parseValue = Just . Just . CompatAntXMLPath
+    optionName = pure "jxml"
+    optionHelp = pure "An alias for --xml"
 
 type ReportFn = StatusMap -> IO (Time -> IO Bool)
 
@@ -30,8 +47,16 @@ TestReporter antXmlOptions antXmlReport = antXMLRunner
 
 antXMLTransformer :: [Ingredient] -> Ingredient
 antXMLTransformer =
-    ingredientTransformer antXmlOptions $ reportTransform antXmlTransform
+    ingredientTransformer (compatOption : antXmlOptions) $
+        reportTransform antXmlTransform . applyCompatOpt
   where
+    compatOption = Option (Proxy :: Proxy (Maybe CompatAntXMLPath))
+
+    applyCompatOpt opts = case lookupOption opts of
+        Nothing -> opts
+        Just (CompatAntXMLPath path) ->
+            setOption (Just (AntXMLPath path)) opts
+
     antXmlTransform opts testTree smap totalTime retVal =
         case antXmlReport opts testTree of
             Nothing -> return retVal
