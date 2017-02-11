@@ -12,10 +12,12 @@ import Control.Applicative (pure)
 import Control.Monad (msum)
 
 import Test.Tasty.Options
-    ( IsOption(defaultValue, parseValue, optionName, optionHelp)
+    ( IsOption(defaultValue, parseValue, optionName, optionHelp, optionCLParser)
     , OptionSet
     , OptionDescription(Option)
+    , flagCLParser
     , lookupOption
+    , safeRead
     , setOption
     )
 import Test.Tasty.Runners
@@ -39,6 +41,15 @@ instance IsOption (Maybe CompatAntXMLPath) where
     optionName = pure "jxml"
     optionHelp = pure "An alias for --xml"
 
+newtype ExitSuccess = ExitSuccess { isExitSuccess :: Bool } deriving Typeable
+
+instance IsOption ExitSuccess where
+    defaultValue = ExitSuccess False
+    parseValue = fmap ExitSuccess . safeRead
+    optionName = return "exit-success"
+    optionHelp = return "Exit with status 0 even if some tests failed"
+    optionCLParser = flagCLParser Nothing (ExitSuccess True)
+
 type ReportFn = StatusMap -> IO (Time -> IO Bool)
 
 antXmlOptions :: [OptionDescription]
@@ -47,9 +58,10 @@ TestReporter antXmlOptions antXmlReport = antXMLRunner
 
 antXMLTransformer :: [Ingredient] -> Ingredient
 antXMLTransformer =
-    ingredientTransformer (compatOption : antXmlOptions) $
+    ingredientTransformer (exitOption : compatOption : antXmlOptions) $
         reportTransform antXmlTransform . applyCompatOpt
   where
+    exitOption = Option (Proxy :: Proxy ExitSuccess)
     compatOption = Option (Proxy :: Proxy (Maybe CompatAntXMLPath))
 
     applyCompatOpt opts = case lookupOption opts of
@@ -57,8 +69,11 @@ antXMLTransformer =
         Just (CompatAntXMLPath path) ->
             setOption (Just (AntXMLPath path)) opts
 
-    antXmlTransform opts testTree smap totalTime retVal =
-        case antXmlReport opts testTree of
+    antXmlTransform opts testTree smap totalTime = fmap exit . antXml
+      where
+        exit retVal = retVal || isExitSuccess (lookupOption opts)
+
+        antXml retVal = case antXmlReport opts testTree of
             Nothing -> return retVal
             Just reportFn -> do
                 k <- reportFn smap

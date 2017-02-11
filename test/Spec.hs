@@ -48,10 +48,19 @@ main = hspec $ do
             unpack out `shouldContain` "Usage:"
             unpack out `shouldContain` "--xml"
             unpack out `shouldContain` "--jxml"
+            unpack out `shouldContain` "--exit-success"
         it "reports failure when some test fails" $ do
             (out, err, exc, status) <- capture $
                 withArgs [] $
                     tastyMain `shouldThrow` exitFailure (Just 1)
+            status `shouldBe` Just (Exited ExitSuccess)
+            (err, exc) `shouldBe` ("", "")
+            unpack out `shouldContain` "\n1 out of 2 tests failed"
+            doesFileExist "tasty.xml" `shouldReturn` False
+        it "exits successfully even when some test fails (--exit-success)" $ do
+            (out, err, exc, status) <- capture $
+                withArgs ["--exit-success"] $
+                    tastyMain `shouldThrow` exitSuccess
             status `shouldBe` Just (Exited ExitSuccess)
             (err, exc) `shouldBe` ("", "")
             unpack out `shouldContain` "\n1 out of 2 tests failed"
