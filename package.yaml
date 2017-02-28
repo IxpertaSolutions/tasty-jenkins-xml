@@ -46,12 +46,13 @@ dependencies:
 library:
     exposed-modules:
         - Test.Tasty.Runners.JenkinsXML
+    source-dirs: src
     dependencies:
         - tasty-ant-xml == 1.0.*
 
 tests:
     spec:
-        main: Spec.hs
+        main: spec.hs
         source-dirs: test
         dependencies:
             - bytestring >=0.9
