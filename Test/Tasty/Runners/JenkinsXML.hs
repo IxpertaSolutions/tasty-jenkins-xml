@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 -- | TODO
 module Test.Tasty.Runners.JenkinsXML
@@ -6,10 +7,17 @@ module Test.Tasty.Runners.JenkinsXML
     )
   where
 
-import Data.Typeable (Typeable)
-import Data.Proxy (Proxy(Proxy))
 import Control.Applicative (pure)
-import Control.Monad (msum)
+import Control.Monad ((>>=), msum)
+import Data.Bool (Bool(True, False), (||))
+import Data.Foldable (concatMap)
+import Data.Function ((.), ($), flip)
+import Data.Functor (fmap)
+import Data.Maybe (Maybe(Nothing, Just))
+import Data.Monoid ((<>))
+import Data.Proxy (Proxy(Proxy))
+import Data.Typeable (Typeable)
+import System.IO (IO, FilePath)
 
 import Test.Tasty.Options
     ( IsOption(defaultValue, parseValue, optionName, optionHelp, optionCLParser)
@@ -46,8 +54,8 @@ newtype ExitSuccess = ExitSuccess { isExitSuccess :: Bool } deriving Typeable
 instance IsOption ExitSuccess where
     defaultValue = ExitSuccess False
     parseValue = fmap ExitSuccess . safeRead
-    optionName = return "exit-success"
-    optionHelp = return "Exit with status 0 even if some tests failed"
+    optionName = pure "exit-success"
+    optionHelp = pure "Exit with status 0 even if some tests failed"
     optionCLParser = flagCLParser Nothing (ExitSuccess True)
 
 type ReportFn = StatusMap -> IO (Time -> IO Bool)
@@ -74,7 +82,7 @@ antXMLTransformer =
         exit retVal = retVal || isExitSuccess (lookupOption opts)
 
         antXml retVal = case antXmlReport opts testTree of
-            Nothing -> return retVal
+            Nothing -> pure retVal
             Just reportFn -> do
                 k <- reportFn smap
                 k totalTime
@@ -83,7 +91,7 @@ reportTransform
     :: (OptionSet -> TestTree -> StatusMap -> Time -> Bool -> IO Bool)
     -> OptionSet -> TestTree -> ReportFn -> ReportFn
 reportTransform f opts testTree reportFn smap =
-    reportFn smap >>= \k -> return $ \totalTime ->
+    reportFn smap >>= \k -> pure $ \totalTime ->
         k totalTime >>= f opts testTree smap totalTime
 
 ingredientTransformer
@@ -91,7 +99,7 @@ ingredientTransformer
     -> (OptionSet -> TestTree -> ReportFn -> ReportFn)
     -> [Ingredient] -> Ingredient
 ingredientTransformer options transform ingredients =
-    TestManager (options ++ existingOptions) $
+    TestManager (options <> existingOptions) $
         tryIngredients' transform ingredients
   where
     existingOptions = flip concatMap ingredients $ \ingredient ->
@@ -104,7 +112,7 @@ tryIngredient'
     -> Ingredient -> OptionSet -> TestTree -> Maybe (IO Bool)
 tryIngredient' f (TestReporter _ report) opts testTree = do -- Maybe monad
     reportFn <- report opts testTree
-    return $ launchTestTree opts testTree $ f opts testTree reportFn
+    pure $ launchTestTree opts testTree $ f opts testTree reportFn
 tryIngredient' _ (TestManager _ manage) opts testTree =
     manage opts testTree
 
@@ -112,4 +120,4 @@ tryIngredients'
     :: (OptionSet -> TestTree -> ReportFn -> ReportFn)
     -> [Ingredient] -> OptionSet -> TestTree -> Maybe (IO Bool)
 tryIngredients' f ins opts tree =
-    msum $ map (\i -> tryIngredient' f i opts tree) ins
+    msum $ fmap (\i -> tryIngredient' f i opts tree) ins

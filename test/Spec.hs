@@ -1,12 +1,21 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
 import Control.Monad (forM_)
+import Data.Bool (Bool(True, False))
+import Data.Eq ((==))
+import Data.Function (($))
+import Data.Int (Int)
+import Data.Maybe (Maybe(Just), maybe)
+import Data.Monoid ((<>))
+import Data.String (String)
 import System.Directory (doesFileExist)
 import System.Environment (withArgs)
 import System.Exit (ExitCode(ExitSuccess, ExitFailure))
+import System.IO (IO, readFile)
 
 import Data.ByteString.Lazy.Char8 (unpack)
 import System.IO.Capture (capture)
@@ -66,7 +75,7 @@ main = hspec $ do
             unpack out `shouldContain` "\n1 out of 2 tests failed"
             doesFileExist "tasty.xml" `shouldReturn` False
         forM_ ["--xml", "--jxml"] $ \flag ->
-            it ("writes xml in addition to console output (" ++ flag ++ ")") $ do
+            it ("writes xml in addition to console output (" <> flag <> ")") $ do
                 (out, err, exc, status) <- capture $
                     withArgs [flag, "tasty.xml"] $
                         tastyMain `shouldThrow` exitFailure (Just 1)
