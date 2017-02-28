@@ -2,7 +2,8 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Test.Tasty.Runners.JenkinsXML
-    ( jenkinsXMLTransformer
+    ( CompatAntXMLPath(..)
+    , jenkinsXMLTransformer
     )
   where
 
