@@ -9,21 +9,14 @@
 
 ## Description
 
-**An ingredient transformer version of [tasty-ant-xml][tasty-ant-xml].**
-
-This package implements a [tasty][] ingredient transformer that makes it
-possible to output test results as JUnit XML **in addition to** other output
-ingredient, e.g. a `consoleTestReporter`. Internally it invokes the
-[tasty-ant-xml][] ingredient.
-
-To be practically useful, it implements two additions:
+An extension of [tasty-ant-xml][] that also outputs to console and implements
+two additions to be more practically useful:
 
  * `--jxml` alias for `--xml` for [test-framework][] compatibility,
 
  * `--exit-success` to distinguish between _failed_ and _unstable_ builds in
    Jenkins CI.
 
-[tasty]: https://hackage.haskell.org/package/tasty
 [tasty-ant-xml]: https://hackage.haskell.org/package/tasty-ant-xml
 [test-framework]: https://hackage.haskell.org/package/test-framework
 
@@ -33,28 +26,12 @@ Example:
 
 ```haskell
 import Test.Tasty
-import Test.Tasty.Runners.JenkinsXML (jenkinsXMLTransformer)
+import Test.Tasty.Runners.JenkinsXML (jenkinsXMLRunner)
 
 main :: IO ()
 main = defaultMainWithIngredients ingredients tests
   where
-    ingredients = [listingTests, jenkinsXMLTransformer [consoleTestReporter]]
-```
-
-Alternatively `jenkinsXMLTransformer` may be applied directly to
-`defaultIngredients`.
-
-For comparison, here's a `main` that uses [tasty-ant-xml][] instead (and can't
-output to console and XML at the same time):
-
-```haskell
-import Test.Tasty
-import Test.Tasty.Runners.AntXML (antXMLRunner)
-
-main :: IO ()
-main = defaultMainWithIngredients ingredients tests
-  where
-    ingredients = [listingTests, antXMLRunner, consoleTestReporter]
+    ingredients = [listingTests, jenkinsXMLRunner]
 ```
 
 ## Contributing

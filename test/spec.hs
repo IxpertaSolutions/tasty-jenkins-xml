@@ -32,14 +32,9 @@ import Test.Hspec
     , shouldThrow
     )
 import Test.Mockery.Directory (inTempDirectory)
-import Test.Tasty
-    ( TestTree
-    , defaultMainWithIngredients
-    , defaultIngredients
-    , testGroup
-    )
+import Test.Tasty (TestTree, defaultMainWithIngredients, testGroup)
 import Test.Tasty.HUnit (assert, testCase)
-import Test.Tasty.Runners.JenkinsXML (jenkinsXMLTransformer)
+import Test.Tasty.Runners.JenkinsXML (jenkinsXMLRunner)
 
 
 {-# ANN module ("HLint: ignore Reduce duplication" :: String) #-}
@@ -91,7 +86,7 @@ main = hspec $ do
 tastyMain :: IO ()
 tastyMain = defaultMainWithIngredients ingredients tastyTests
   where
-    ingredients = [jenkinsXMLTransformer defaultIngredients]
+    ingredients = [jenkinsXMLRunner]
 
 tastyTests :: TestTree
 tastyTests = testGroup "group1"

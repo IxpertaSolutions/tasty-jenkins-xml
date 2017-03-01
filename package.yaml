@@ -1,12 +1,11 @@
 name: tasty-jenkins-xml
 version: 0.1.0.0
 category: Testing
-synopsis: Render tasty output to XML for Jenkins (ingredient transformer)
+synopsis: Render tasty output to both console and XML for Jenkins
 description:
-    A tasty ingredient transformer (meaning consoleTestReporter or any other
-    ingredient can run as well) to output test results in XML, using the Ant
-    schema. This XML can be consumed by the Jenkins continuous integration
-    framework.
+    An extension of
+    <https://hackage.haskell.org/package/tasty-ant-xml tasty-ant-xml>
+    that is meant to be more practically useful with Jenkins CI.
 github: IxpertaSolutions/tasty-jenkins-xml
 
 license: BSD3
@@ -41,14 +40,14 @@ ghc-options:
 
 dependencies:
     - base >=4 && <5
-    - tasty >= 0.10 && < 0.12
+    - tasty >=0.11.2 && <0.12
 
 library:
     exposed-modules:
         - Test.Tasty.Runners.JenkinsXML
     source-dirs: src
     dependencies:
-        - tasty-ant-xml == 1.0.*
+        - tasty-ant-xml ==1.0.*
 
 tests:
     spec:

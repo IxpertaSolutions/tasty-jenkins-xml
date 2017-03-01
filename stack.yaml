@@ -4,5 +4,6 @@ extra-deps:
     - haskell-src-exts-1.19.1
     - hlint-1.9.41
     - io-capture-1.0.0
+    - tasty-0.11.2
 flags: {}
 extra-package-dbs: []
