@@ -1,5 +1,5 @@
 name: tasty-jenkins-xml
-version: 0.1.0.0
+version: 0.2.0.0
 category: Testing
 synopsis: Render tasty output to both console and XML for Jenkins
 description:
