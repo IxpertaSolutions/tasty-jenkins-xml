@@ -15,6 +15,7 @@ import Data.Bool (Bool(True, False), (||))
 import Data.Function ((.), ($), flip)
 import Data.Functor (Functor(fmap))
 import Data.Maybe (Maybe(Nothing, Just))
+import Data.Monoid (mempty)
 import Data.Proxy (Proxy(Proxy))
 import Data.Typeable (Typeable)
 import System.IO (FilePath)
@@ -24,8 +25,8 @@ import Test.Tasty.Ingredients.Basic (consoleTestReporter)
 import Test.Tasty.Options
     ( IsOption(defaultValue, parseValue, optionName, optionHelp, optionCLParser)
     , OptionDescription(Option)
-    , flagCLParser
     , lookupOption
+    , mkFlagCLParser
     , safeRead
     , setOption
     )
@@ -47,7 +48,7 @@ instance IsOption ExitSuccess where
     parseValue = fmap ExitSuccess . safeRead
     optionName = pure "exit-success"
     optionHelp = pure "Exit with status 0 even if some tests failed"
-    optionCLParser = flagCLParser Nothing (ExitSuccess True)
+    optionCLParser = mkFlagCLParser mempty (ExitSuccess True)
 
 addCompatOpt :: Ingredient -> Ingredient
 addCompatOpt reporter =
