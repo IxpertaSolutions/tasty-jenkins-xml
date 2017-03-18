@@ -5,5 +5,6 @@ extra-deps:
     - hlint-1.9.41
     - io-capture-1.0.0
     - tasty-0.11.2
+    - tasty-ant-xml-1.1.0
 flags: {}
 extra-package-dbs: []

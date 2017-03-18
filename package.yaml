@@ -47,7 +47,7 @@ library:
         - Test.Tasty.Runners.JenkinsXML
     source-dirs: src
     dependencies:
-        - tasty-ant-xml ==1.0.*
+        - tasty-ant-xml >=1 && <=1.2
 
 tests:
     spec:

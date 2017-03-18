@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.15.0.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -38,7 +38,7 @@ library
   build-depends:
       base >=4 && <5
     , tasty >=0.11.2 && <0.12
-    , tasty-ant-xml ==1.0.*
+    , tasty-ant-xml >=1 && <=1.2
   if flag(pedantic)
     ghc-options: -Werror
   if impl(ghc >=8)
