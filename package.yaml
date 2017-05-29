@@ -47,7 +47,7 @@ library:
         - Test.Tasty.Runners.JenkinsXML
     source-dirs: src
     dependencies:
-        - tasty-ant-xml ==1.0.*
+        - tasty-ant-xml >=1.0 && <1.2
 
 tests:
     spec:
@@ -55,7 +55,7 @@ tests:
         source-dirs: test
         dependencies:
             - bytestring >=0.9
-            - directory >=1.2.3.0 # just >=1.2 would be ok, but tasty-ant-xml breaks with older versions yet doesn't reflect that in deps
+            - directory >=1.2.3.0 # just >=1.2 would be ok, but tasty-ant-xml-1.0.5 breaks with older versions yet doesn't reflect that in deps
             - hspec >=2.2
             - io-capture >=1.0
             - mockery >=0.3
